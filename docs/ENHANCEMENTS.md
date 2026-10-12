@@ -163,6 +163,18 @@ CI（持续集成）= 每次 push 代码，云端自动执行流水线验证代�
 - **关键文件**：`mall-demo/service/impl/RedissonDemoServiceImpl.java`、`RedissonStockDemoServiceImpl.java`、`dao/SkuStockDao.java`
 - **验证**：100 并发扣 100 库存分毫不差；50 并发无锁版成功 50 次却只扣 1 件（超卖复现）
 
+## 17. 两种登录方案对照 demo（mall-demo）
+
+- **解决的问题**：项目主链路用 Sa-Token（本质是"有状态的 token 存 Redis"），但"Cookie+Session 到底怎么跑""JWT 的无状态到底无在哪"只有概念、没有可运行的对照物
+- **方案**：mall-demo 里手写两套最小实现，**不加拦截器、不加 WebMvcConfig**，只暴露核心动作，共用 `DemoUserStore`（admin/123456、user/123456）
+  - JWT 侧（无状态）：不用第三方库手写 HS256——`Base64Url(header).Base64Url(payload).HMAC-SHA256(前两段, 密钥)`，payload 带 sub/iat/exp；验签用 `MessageDigest.isEqual` 固定时间比较，避免靠响应耗时逐字节猜签名；refreshToken 用 UUID 存内存 Map，**取走即作废**（`remove` 而非 `get`，防重放）
+  - Session 侧（有状态）：只用 `request.getSession()` / `getSession(false)` / `setAttribute` / `invalidate()` 四个原生 API——sessionId 的生成、存储、查找、Cookie 下发全部由内嵌 Tomcat 完成
+- **关键文件**：`mall-demo/auth/JwtUtil.java`（签发+验签）、`JwtAuthController.java`、`SessionAuthController.java`、`DemoUserStore.java`
+- **验证**：curl 实测全通过——
+  - Session：未登录 `/session/me` 返回 401；登录响应头 `Set-Cookie: JSESSIONID=...; Path=/; HttpOnly`；带 Cookie 认出用户；**登出响应里没有任何 Set-Cookie**（Tomcat 只删服务端内存，不清浏览器 cookie），同一 Cookie 再请求即 401，重新登录拿到全新 sessionId
+  - JWT：改掉签名最后一个字符即"签名不匹配"；**退出登录后旧 token 依然有效**（服务端无事可做）；refreshToken 二次使用被拒；`expireSeconds=5` 等 6 秒返回"token 已过期"
+- **对照结论**：session 能立刻踢人，代价是服务端必须存着（多实例要共享存储）；JWT 服务端不存、天生适合横向扩展，代价是签出去就收不回，只能靠短有效期 + refreshToken 兜底
+
 ## 踩坑记录（避坑指南）
 
 | 坑 | 解决 |
@@ -172,3 +184,6 @@ CI（持续集成）= 每次 push 代码，云端自动执行流水线验证代�
 | 秒杀场次时间是 TIME 类型（每天循环的时段），直接和完整日期比较永远失败 | 用 `DateUtil.getTime()` 归一化到时分秒再比 |
 | 订单 `receiver_*` 字段非空，秒杀下单未填导致约束冲突 | 从收货地址服务查出后填充 |
 | 构建/运行必须 JDK 17（本机默认 JAVA_HOME 是 1.8） | 显式指定 `JAVA_HOME` |
+| IDEA 编译失败时不报错中断，而是把"错误 class"写进 `target/classes`（方法描述符退化成裸类型 `LCommonResult;`），且时间戳与源码完全相同导致 Maven 增量编译判定"已最新"直接跳过 | 运行时报**没有包名**的 `NoClassDefFoundError: CommonResult` 就是它；绕过 Maven 直接 `javac -parameters` 重编出错文件，或在 IDEA 里 rebuild 项目 |
+| 远程 MySQL 8 用 caching_sha2_password，JDBC URL 缺 `allowPublicKeyRetrieval=true` | 启动刷 `Public Key Retrieval is not allowed`（state 08001），URL 补该参数即可 |
+| Seata 的 `start.bat` 存成 UTF-8 又没 `chcp 65001`，cmd 按 GBK 解码把中文注释弄乱、classpath 拼装失败 | 绕开脚本直接跑：`java -cp "$(cat cp.txt);." io.seata.server.ServerApplication` |

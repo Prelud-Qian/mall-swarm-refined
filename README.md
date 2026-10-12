@@ -31,7 +31,7 @@ mall 商城全家桶：Spring Cloud 微服务后端 + 后台管理前端 + 移�
 | mall-admin | 8080 | 后台管理服务 |
 | mall-portal | 8085 | 前台商城服务（含 /sso 登录接口） |
 | mall-search | 8081 | 商品搜索 |
-| mall-demo | 8082 | Feign 远程调用示例 + Redisson 分布式锁 demo |
+| mall-demo | 8082 | 学习演示模块：Feign 远程调用、Redisson 分布式锁、JWT 与 Cookie+Session 登录对照 |
 | mall-monitor | 8101 | Spring Boot Admin 监控中心 |
 
 > 注意：开发环境下两个前端通过网关访问后端（admin-web → gateway:8201/mall-admin，app-web → gateway:8201/mall-portal）。
@@ -53,6 +53,7 @@ mall 商城全家桶：Spring Cloud 微服务后端 + 后台管理前端 + 移�
 - **Seata 分布式事务演示**：AT 模式全局事务（demo 发起 + portal 参与），失败全局回滚实测验证
 - **秒杀前端入口**：首页秒杀专区"立即抢购"按钮，走通秒杀下单完整链路
 - **Redisson 使用 demo**（mall-demo）：分布式锁基础使用、分布式锁 + DB 乐观锁扣库存演示
+- **JWT 与 Cookie+Session 登录对照 demo**（mall-demo）：手写 HS256 签发验签（refreshToken 一次性换发）与原生 HttpSession 登录并排对照，实测"服务端存不存状态"带来的取舍差异
 
 ## 更多信息
 
