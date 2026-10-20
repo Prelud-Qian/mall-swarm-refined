@@ -25,7 +25,7 @@
         </view>
       </view>
       <button class="confirm-btn" @click="toLogin" :disabled="logining"> 登录 </button>
-      <button class="confirm-btn2" @click="toRegist('qrcode')">获取体验账号</button>
+      <button class="confirm-btn2" @click="toRegist('register')">注册账号</button>
       <view class="forget-section" @click="toRegist('qrcode')">忘记密码?</view>
     </view>
     <view class="register-section">

@@ -22,6 +22,13 @@ mall 商城全家桶：Spring Cloud 微服务后端 + 后台管理前端 + 移�
    - 后台管理：`cd mall-admin-web && npm install && npm run dev`
    - 移动端 H5：`cd mall-app-web && npm install && npm run dev:h5`
 
+## 默认账号
+
+| 端 | 用户名 | 密码 |
+| --- | --- | --- |
+| 管理后台（mall-admin-web） | admin | admin123456 |
+| 移动端 / 小程序 H5（mall-app-web） | test | test123456 |
+
 ## 服务端口
 
 | 服务 | 端口 | 说明 |

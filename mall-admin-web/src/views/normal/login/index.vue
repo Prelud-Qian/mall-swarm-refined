@@ -4,7 +4,8 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user';
 import { isvalidUsername } from '@/utils/validate';
 import login_center_bg from '@/assets/images/login_center_bg.png'
-import { type FormInstance, type FormRules } from 'element-plus';
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus';
+import { adminRegisterAPI } from '@/apis/admin'
 
 // 使用Vue Router和Pinia
 const router = useRouter()
@@ -27,8 +28,21 @@ const loginRules = reactive<FormRules<typeof loginForm>>({
 
 // 登陆按钮进度条
 const loading = ref(false)
-// 公众号对话框是否可见
-const dialogVisible = ref(false)
+
+// 注册对话框
+const registerDialogVisible = ref(false)
+const registering = ref(false)
+const registerFormRef = ref<FormInstance>()
+const registerForm = reactive({
+  username: '',
+  password: '',
+  confirmPassword: '',
+})
+const registerRules = reactive<FormRules<typeof registerForm>>({
+  username: [{ required: true, trigger: 'blur', validator: validateUsername }],
+  password: [{ required: true, trigger: 'blur', validator: validateRegisterPass }],
+  confirmPassword: [{ required: true, trigger: 'blur', validator: validateConfirmPass }],
+})
 
 // 用户名验证函数
 function validateUsername(rule: unknown, value: string, callback: (error?: Error) => void) {
@@ -47,6 +61,49 @@ function validatePass(rule: unknown, value: string, callback: (error?: Error) =>
     callback()
   }
 };
+
+// 注册密码验证函数
+function validateRegisterPass(rule: unknown, value: string, callback: (error?: Error) => void) {
+  if (value.length < 6) {
+    callback(new Error('密码不能小于6位'))
+  } else {
+    callback()
+  }
+};
+
+// 确认密码验证函数
+function validateConfirmPass(rule: unknown, value: string, callback: (error?: Error) => void) {
+  if (value !== registerForm.password) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+};
+
+// 处理注册按钮事件
+const handleRegister = () => {
+  registerFormRef.value!.validate(async (valid) => {
+    if (valid) {
+      registering.value = true
+      try {
+        await adminRegisterAPI({
+          username: registerForm.username.trim(),
+          password: registerForm.password,
+        })
+        ElMessage.success('注册成功，请登录')
+        loginForm.username = registerForm.username.trim()
+        registerDialogVisible.value = false
+        registerForm.username = ''
+        registerForm.password = ''
+        registerForm.confirmPassword = ''
+      } catch (err) {
+        console.log(err)
+      } finally {
+        registering.value = false
+      }
+    }
+  })
+}
 
 // 组件挂载完成后调用
 onMounted(() => {
@@ -112,24 +169,47 @@ const handleLogin = () => {
           <el-button style="width: 45%" type="primary" :loading="loading" @click="handleLogin">
             登录
           </el-button>
-          <el-button style="width: 45%" type="primary" @click="dialogVisible = true">
-            获取体验账号
+          <el-button style="width: 45%" type="primary" @click="registerDialogVisible = true">
+            注册
           </el-button>
         </el-form-item>
       </el-form>
     </el-card>
     <img :src="login_center_bg" class="login-center-layout">
-    <el-dialog title="公众号二维码" v-model="dialogVisible" :show-close="false" :center="true" width="30%">
-      <div style="text-align: center">
-        <span class="font-title-large"><span class="color-main font-extra-large">关注公众号</span>回复<span
-            class="color-main font-extra-large">体验</span>获取体验账号</span>
-        <br>
-        <img src="http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/banner/qrcode_for_macrozheng_258.jpg" width="160"
-          height="160" style="margin-top: 10px">
-      </div>
+    <el-dialog title="注册账号" v-model="registerDialogVisible" :center="true" width="30%">
+      <el-form :model="registerForm" :rules="registerRules" ref="registerFormRef" label-position="left">
+        <el-form-item prop="username">
+          <el-input v-model="registerForm.username" placeholder="请输入用户名">
+            <template #prefix>
+              <span>
+                <svg-icon icon-class="user" class="color-main"></svg-icon>
+              </span>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input v-model="registerForm.password" show-password placeholder="请输入密码">
+            <template #prefix>
+              <span>
+                <svg-icon icon-class="password" class="color-main"></svg-icon>
+              </span>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item prop="confirmPassword">
+          <el-input v-model="registerForm.confirmPassword" show-password placeholder="请再次输入密码">
+            <template #prefix>
+              <span>
+                <svg-icon icon-class="password" class="color-main"></svg-icon>
+              </span>
+            </template>
+          </el-input>
+        </el-form-item>
+      </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button type="primary" @click="dialogVisible = false">确定</el-button>
+          <el-button @click="registerDialogVisible = false">取消</el-button>
+          <el-button type="primary" :loading="registering" @click="handleRegister">注册</el-button>
         </span>
       </template>
     </el-dialog>

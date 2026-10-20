@@ -38,8 +38,4 @@ export type RegisterParam = {
   username: string
   /** 密码 */
   password: string
-  /** 手机号 */
-  telephone: string
-  /** 验证码 */
-  authCode: string
 }

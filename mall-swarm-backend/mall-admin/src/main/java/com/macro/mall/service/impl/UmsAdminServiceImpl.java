@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -80,6 +81,7 @@ public class UmsAdminServiceImpl implements UmsAdminService {
     }
 
     @Override
+    @Transactional
     public UmsAdmin register(UmsAdminParam umsAdminParam) {
         UmsAdmin umsAdmin = new UmsAdmin();
         BeanUtils.copyProperties(umsAdminParam, umsAdmin);
@@ -96,6 +98,11 @@ public class UmsAdminServiceImpl implements UmsAdminService {
         String encodePassword = BCrypt.hashpw(umsAdmin.getPassword());
         umsAdmin.setPassword(encodePassword);
         adminMapper.insert(umsAdmin);
+        //新注册账号默认分配“商品管理员”角色，否则登录后没有任何菜单权限
+        UmsAdminRoleRelation relation = new UmsAdminRoleRelation();
+        relation.setAdminId(umsAdmin.getId());
+        relation.setRoleId(1L);
+        adminRoleRelationMapper.insert(relation);
         return umsAdmin;
     }
 

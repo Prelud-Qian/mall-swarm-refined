@@ -35,10 +35,8 @@ public class UmsMemberController {
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     @ResponseBody
     public CommonResult register(@RequestParam String username,
-                                 @RequestParam String password,
-                                 @RequestParam String telephone,
-                                 @RequestParam String authCode) {
-        memberService.register(username, password, telephone, authCode);
+                                 @RequestParam String password) {
+        memberService.register(username, password);
         return CommonResult.success(null,"注册成功");
     }
 

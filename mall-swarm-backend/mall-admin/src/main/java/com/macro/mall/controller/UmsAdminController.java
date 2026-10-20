@@ -46,7 +46,7 @@ public class UmsAdminController {
     public CommonResult<UmsAdmin> register(@Validated @RequestBody UmsAdminParam umsAdminParam) {
         UmsAdmin umsAdmin = adminService.register(umsAdminParam);
         if (umsAdmin == null) {
-            return CommonResult.failed();
+            return CommonResult.failed("用户名已存在");
         }
         return CommonResult.success(umsAdmin);
     }
